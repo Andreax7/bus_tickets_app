@@ -1,0 +1,7 @@
+{
+    "python.pythonPath": "C:\\Users\\Error\\AppData\\Local\\Microsoft\\WindowsApps\\python3.9.exe",
+    "python.linting.enabled": false,
+    "python.linting.banditEnabled": false,
+    "python.linting.pylintEnabled": true,
+    "python.linting.flake8Enabled": false
+}
