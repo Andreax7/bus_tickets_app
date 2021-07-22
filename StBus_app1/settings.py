@@ -40,9 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'my_api.apps.MyApiConfig',
-    
     'rest_framework',
-    'rest_framework.authtoken',
     'corsheaders',
 ]
 
@@ -51,6 +49,7 @@ REST_FRAMEWORK = {
     # or allow read-only access for unauthenticated users.
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
@@ -63,6 +62,8 @@ REST_FRAMEWORK = {
 }
 #JWT package generates token every day
 JWT_AUTH = {
+    'JWT_AUTH_HEADER_PREFIX': 'JWT',
+
     'JWT_ENCODE_HANDLER':
     'rest_framework_jwt.utils.jwt_encode_handler',
 
@@ -92,8 +93,7 @@ JWT_AUTH = {
     'JWT_AUDIENCE': None,
     'JWT_ISSUER': None,
     'JWT_ALLOW_REFRESH': False,
-    'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(hours=1),
-    'JWT_AUTH_HEADER_PREFIX': 'JWT',
+    'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(hours=1), 
     'JWT_AUTH_COOKIE': None,
 }
 
@@ -130,6 +130,7 @@ CORS_ALLOW_HEADERS = [
     'X-CSRFToken',
     'csrftoken',
     'x-csrftoken',
+    'Access-Control-Allow-Origin',
 ]
 
 CSRF_TRUSTED_ORIGINS = [

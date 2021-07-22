@@ -1,33 +1,58 @@
 from django.shortcuts import render
-from django.core import serializers as core_serializers
+from django.contrib.auth import get_user_model
 from .serializers import *
 from .models import *
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication, TokenAuthentication
+from rest_framework.authentication import TokenAuthentication
+from django.contrib.auth import authenticate
+
 from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.generics import CreateAPIView
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .permissions import IsAdminUser
 from django.shortcuts import render
+
  
 #*****************************************************************
 #***************************ALL USERS*****************************
 #*****************************************************************
 
 # ------POST METHODS----------
-#Login 
+#Login
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@csrf_exempt
+def LoginView(request):
+    username = request.data.get('username')
+    password = request.data.get('password')
+    userf = Profiles.objects.get(username=username)
+    if (username is None) or (password is None):
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+    if(not userf.check_password(password)):
+        user = authenticate(username=username, password=password)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+    user = authenticate(username=username, password=password)
+
+    token = Token.objects.get(user=userf.id)
+    json={}
+    json['username']= request.data["username"]
+    json['token'] = token.key
+    return Response(json)
+
+
+@csrf_protect
 class ProfileView(APIView):
-    authentication_classes = [SessionAuthentication, BasicAuthentication, TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication,]
+    permission_classes = [IsAuthenticated,]
     def get(self, request, format='json'):
         content = {
             'user': str(request.user),
-            'auth': str(request.auth),
+            'auth': none,
         }
         return Response(content)
 
@@ -42,12 +67,14 @@ class RegisterAPI(generics.CreateAPIView):
         if serializer.is_valid():
             user = serializer.save()
             if user:
-                token = Token.objects.create(user=user)
+             #   token = Token.objects.create(user=user)  Used for TokenBasedAuth not JWT!
                 json = serializer.data
-                json['token'] = token.key
+               # json['token'] = token.key  Used for TokenBasedAuth not JWT!
                 return Response(json, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+#---------------------Check if user allready exists api endpoint
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def CheckusernameAPI(request,username):
@@ -73,13 +100,14 @@ def CheckemailAPI(request,email):
     if usr == str(email):
         return Response('true')
     return Response('false')
+#-------------------------------------------------------
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def ProfileView(request, format=None):
     content = {
         'user': str(request.user),  # `django.contrib.auth.User` instance.
-        'auth': str(request.auth),  # None
     }
     return Response(content)
 
@@ -135,7 +163,7 @@ def DestZone(request,pk):
         return Response(serializer.data, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET','POST']) 
+@api_view(['GET']) 
 @permission_classes([AllowAny])
 def Show_Timetable(request,did):
     timetable = Timetable.objects.filter(dest_name_id=did)
@@ -148,13 +176,10 @@ def Show_Timetable(request,did):
             for dep in time:
                 filtered_timetable.append({dep.deptype:dep.departure})
         return Response(filtered_timetable, status=status.HTTP_200_OK)   
-    if request.method == 'POST':
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 #Non_user ticket buying
-@api_view(['GET','POST'])
-def Buy_Ticket(request,tid):
+@api_view(['POST'])
+def Buy_Ticket(request):
     user = request.user
     if request.method == 'POST':
         serializer = TicketSerializer(ticket, many=True)
@@ -167,15 +192,11 @@ def Buy_Ticket(request,tid):
 #**************************************************************************************
 
 @permission_classes([IsAdminUser, IsAuthenticated])
-@api_view(['GET'])
-def DestDetail(request,pk):
-    if request.method == 'GET' and request.user.is_staff == True:
-        dest = Destinations.objects.get(id=pk)
-        serializer = DestDetailSerializer(dest)
-        return Response(serializer.data)
-    elif Destinations.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-    return Response(status=status.HTTP_401_UNAUTHORIZED)
+@api_view(['POST'])
+def AddDest(request):
+    dest = Destinations.objects.get(id=pk)
+    serializer = DestDetailSerializer(dest)
+    return Response(serializer.data)
 
 
 @permission_classes([IsAdminUser])

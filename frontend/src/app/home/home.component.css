@@ -1,0 +1,79 @@
+.content{
+    display:grid;
+    position:relative;
+    height:100%;
+
+}
+
+.intro {
+    align-items: center;
+    background-image: url("../../assets/images/buspic2.png");
+    background-repeat: repeat-x;
+    height:400px;
+    width:100%;
+    top:0;
+    position:absolute;
+    z-index:-2;  
+    background-size: 100% 80%;
+       
+}
+
+.intro2{
+    height: 40%;
+    background-image: url("../../assets/images/cloud.png");
+    width: 60%;
+    position: absolute;
+    top: 30%;
+    
+    animation: cloudmoves 3s infinite linear;
+    }
+
+    @keyframes cloudmoves {
+      from{right:35%;}
+      to{right:50%;}
+    }
+ #intro{
+    font-size: 20px;
+    word-spacing: 5px;
+    line-height: 2.5;
+    position: absolute;
+    top: 45%;  
+    font-family: 'Reggae One', cursive;
+    left: 10%;
+    font-style: oblique;
+    flex:2;
+  }
+ h3{
+  text-transform: uppercase;
+  color: rgb(9, 97, 82);
+  font-size: 30px;
+  text-shadow: 2px 2px 5px rgb(21 110 95 / 90%);
+  letter-spacing: 3px;
+  position: absolute;
+  left: 250px;
+  height: 100px;
+  top: 130px;
+  margin-bottom: .5rem;
+  font-weight: 500;
+  font-family: 'Reggae One', cursive;
+ }
+
+
+
+  a,
+  a:visited,
+  a:hover {
+    text-decoration: none;
+  }
+
+
+
+
+  svg#clouds {
+    position: fixed;
+    bottom: -160px;
+    left: -230px;
+    z-index: -10;
+    width: 1920px;
+  }
+

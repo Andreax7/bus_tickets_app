@@ -33,8 +33,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         return user
-        
-#User profile data email and username validation 
+
+ 
+
+
+#------------------User profile data email and username validation --------------------------
 class usernameSerializer(serializers.ModelSerializer):
     username = serializers.CharField(validators=[UniqueValidator(queryset=Profiles.objects.all())])
     class Meta:
@@ -54,8 +57,16 @@ class emailSerializer(serializers.ModelSerializer):
             user = value['email']
             if str(email) == str(user):
                 raise serializers.ValidationError({'Allready Exists'})          
-        
+ #------------------User profile data email and username validation --------------------------       
 
+class UserSerializer(serializers.ModelSerializer):
+    username = serializers.CharField()
+    class Meta:
+        model = Profiles
+        fields = ['id','username','first_name','last_name','address','picture','role','is_active']
+    def validate(self, validated_data):
+            return Profiles(**validated_data)
+    
 
 class DestDetailSerializer(serializers.ModelSerializer):
     zone = serializers.CharField(source='zone.zone')
@@ -80,14 +91,22 @@ class nonusrSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class TicketSerializer(serializers.ModelSerializer):
-    ticket_types_id = serializers.PrimaryKeyRelatedField(queryset=Ticket_types.objects.all(), many= True)
-    non_users_id = serializers.PrimaryKeyRelatedField(queryset=non_users.objects.all(), many=True)
+    ticketype = serializers.CharField(source='ticket_types.ticketype')
+    ticketprice = serializers.CharField(source='ticket_types.ticket_price')
+    zone = serializers.CharField(source='ticket_types.zone_id')
+    email = serializers.CharField(source='non_users.email')
+    email = serializers.CharField(source='profiles.email')
     class Meta:
         model = Single_ticket
-        fields = '__all__'
+        fields = ['ticketype', 'validfrom','amount','ticketprice','zone','email' ]
     def create(self, validated_data):
+        email = validated_data['ticket_type']
         ticket = Single_ticket.objects.create(
                 Ticket_types = validated_data['ticket_type'],
                 validfrom = validated_data['validfrom'], 
                 amount = validated_data['amount'])
         ticket.save()
+
+#**************************************************************************************
+#*******************************ADMIN PANEL********************************************
+#**************************************************************************************

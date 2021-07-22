@@ -18,7 +18,7 @@ class Profiles(AbstractUser):
     email = models.CharField(max_length=64, null=False, unique=True)
     address = models.CharField(max_length=128, blank=True)
     picture = models.ImageField(upload_to='StBus_app1/media', blank=True)
-    role = models.CharField(max_length=10, null=False, choices=rola)
+    role = models.CharField(max_length=10, null=True, choices=rola, blank=True)
     username = models.CharField(max_length=64, null=False, unique=True)
     REQUIRED_FIELDS = ['first_name', 'email', 'password']
     def __str__(self):
@@ -42,8 +42,8 @@ class Ticket_types(models.Model):
         return str(self.id)
 
 class Single_ticket(models.Model):
-    non_users_id = models.ForeignKey(non_users, on_delete=models.CASCADE, null=False)
-    Profiles_id = models.ForeignKey(Profiles, on_delete=models.CASCADE, null=True)
+    non_users_id = models.ForeignKey(non_users, on_delete=models.CASCADE, null=True, blank=True)
+    Profiles_id = models.ForeignKey(Profiles, on_delete=models.CASCADE, null=True, blank=True)
     ticket_types_id = models.ForeignKey(Ticket_types, on_delete=models.CASCADE, null=False)
     ticket_date = models.DateTimeField(auto_now_add=True, null=False, editable=False)
     validfrom = models.DateTimeField(auto_now_add=False, null=False, editable=True) #starts expiring

@@ -1,15 +1,17 @@
 from . import views
 from django.urls import path, include
-from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework import routers
 from rest_framework_jwt.views import obtain_jwt_token, refresh_jwt_token
 
 router = routers.DefaultRouter(trailing_slash=False)
 
 urlpatterns = [
-    path('accounts/profile/', views.ProfileView, name='profile'),
+    path('myprofile/', views.ProfileView, name='profile'),
+    path('login/', views.LoginView, name='login'),
     path('auth/', obtain_jwt_token),
     path('token-refresh/', refresh_jwt_token),
+ #   path('rest-auth/', include('rest_framework.urls')),
+  
     
     path('register/', views.RegisterAPI.as_view(), name='register'),
     path('checkuser/<str:username>',views.CheckusernameAPI),
@@ -17,6 +19,7 @@ urlpatterns = [
 
     #Admin
     path('destinations/', views.AllDestinations, name='destinations'),
+    path('deupdate/<int:pk>', views.Destination_Update),
     #path('elogin/', views.loginAdm),
     #path('elogout/', views.logoutAdm),
     

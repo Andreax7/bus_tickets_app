@@ -1,0 +1,81 @@
+<form [formGroup]="registerForm" (ngSubmit)="submit()">
+  <div  *ngIf="!submitted" id="register">
+    
+    <p class="font-effect-emboss">Register Here</p>
+    
+    <div class="row">
+        <input type="text" placeholder="Username" id="username" required [formControlName]="'username'" class="form-control" (change)="UsernameUnique()" >
+       
+       <div class="col-4" *ngIf="(registerForm.controls['username'].errors && registerForm.controls['username'].errors?.required) && (registerForm.controls['username'].dirty || registerForm.controls['username'].touched)" id="alert">
+          Username is required
+        </div>
+        <div class="col-4" *ngIf="registerForm.controls.username" id ="alert">
+          {{ unexists }}
+        </div> 
+    </div>
+    <div class="row">
+        <input type="email" placeholder="Email" id="email" required [formControlName]="'email'" class="form-control" (change)="EmailUnique()">
+        <div class="col-4" *ngIf="registerForm.controls['email'].errors?.pattern" id="alert">
+          Incorrect format
+        </div>
+        <div class="col-4" *ngIf="registerForm.controls.email" id="alert">
+          {{ emailcheck }}
+        </div>
+    </div>
+    <div class="row">
+      <input type="text" placeholder="First Name" id="first_name" required [formControlName]="'first_name'" class="form-control">
+      <div class="col-6" *ngIf="registerForm.controls['first_name'].invalid && (registerForm.controls['first_name'].dirty || registerForm.controls['first_name'].touched)" id="alert">
+      <div *ngIf="registerForm.controls['first_name'].errors?.required">
+        This field is required
+      </div></div>
+       
+    </div>
+    <div class="row">
+      <input type="text"  placeholder="Last Name" id="last_name" required [formControlName]="'last_name'" class="form-control">
+      <div class="col-6" *ngIf="registerForm.controls['last_name'].invalid && (registerForm.controls['last_name'].dirty || registerForm.controls['last_name'].touched)" id="alert">
+      <div *ngIf="registerForm.controls.last_name.errors?.required">
+          This field is required
+      </div>
+    </div>
+    </div>
+    <div class="row">
+        <input type="password" [formControlName]="'password'" placeholder="Password" id="password" class="form-control" [pattern]="passwordPattern" required>
+        <div class="col-4" *ngIf="(registerForm.controls.password.errors && registerForm.controls.password.errors?.required) && (registerForm.controls['password'].dirty || registerForm.controls['password'].touched)" id="alert">
+          Invalid input
+        </div>
+        <div class="col-4" style="width:'60%';" *ngIf="registerForm.controls['password'].errors?.pattern" id="alert"> 
+          Password not strong enough
+        </div>
+    </div>
+    <div class="row">
+      <input type="password" [formControlName]="'password2'" placeholder="Confirm Password" class="form-control" id="pasword2" required (change)="PassCheck()">
+        <div class="col-4" id="alert"> 
+       {{ PassMatch }}
+        </div>
+      <div class="col-4" *ngIf="registerForm.controls['password2'].touched && registerForm.controls['password2'].errors?.required"  id="alert"> 
+        This field is required
+     </div>
+    <span> *Password must have minimum 8 characters, <br> capital letters and numbers or characters.</span>
+  </div> 
+    <div class="row">
+      <div class="col-6" id ="role">
+        <label for="role">Select your status</label>
+      </div>
+      <div class="col-6">
+      <select [formControlName]="'role'">   
+          <option value="none"> none </option>
+          <option value="student"> student </option>
+          <option value="unemployed"> unemployed </option>
+      </select><br>
+      </div>
+    </div>
+        <div id="btn" ><button [disabled]="!registerForm.valid"> Submit </button>
+        </div>
+  </div>
+    <div *ngIf="Failed" id ="register">
+      <p> Something went wrong! </p>
+    </div>
+    <div *ngIf="submitted" id ="register">
+      <p> Your account was created. </p>
+    </div>
+  </form>

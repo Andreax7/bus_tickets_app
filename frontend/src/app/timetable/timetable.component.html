@@ -1,0 +1,77 @@
+<div class="intro">
+    <h3> CATCH A BUS RIDE AROUND SPLIT</h3>
+    <div class="intro2">
+    </div>
+    <p id="intro">Check timetables for bus lines around Split area,<br>
+      get tickets or subscriptions and enjoy Your ride.
+   </p>
+</div>
+
+<div class="container">
+    <h3 id="header"> DESTINATIONS </h3>
+    <div class="intro3">
+        <span> Find here timetable of wanted bus line by clicking on the details icon <br><br>
+            Check the Bus lines or search your line by zone                
+        </span>
+        <br>
+        <p>Filter destinations by zone 
+
+        <select class="custom-select"  #mySelect (change)="getByZone(mySelect.value)">
+                <option [value]=""> </option>
+                <option [value]="1">Suburbs</option>
+                <option [value]="2">City Center</option>
+        </select>   </p>
+ 
+    </div>
+        <div class="col-6">
+        <table id="desttable">
+            <thead>
+               <tr>
+                <th>ZONE</th>
+                <th>LINE NO.</th>
+                <th>DEPARTURE FROM </th>
+                <th>TO</th>
+                <th>DETAILS</th>
+               </tr>
+            </thead>
+            <tbody>
+               <tr *ngFor="let dests of dests">
+                  <td>{{ dests.zone }}</td>
+                  <td>{{ dests.id }}</td>
+                  <td>{{ dests.dfrom }}</td>
+                  <td>{{ dests.dto}}</td>
+                  <td (click)="getDetail(dests.id)">
+                    <mat-icon>calendar_today</mat-icon>
+                  </td>
+               </tr>
+            </tbody>
+         </table>
+        </div>
+        <div class="col-6">
+        <table id="timetable" [style.display]="showTimetable ? 'block' : 'none'">
+            <thead>
+                <tr>
+                    <th>WORKING DAYS</th>
+                    <th>HOLIDAYS</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let times of times">
+            
+                    <td>{{times.working_day}}</td>
+                    <td>{{times.holidays}}</td>
+        
+                </tr>
+
+            </tbody>
+        </table> 
+        </div>
+
+   
+</div>   
+
+
+ 
+
+
+ 

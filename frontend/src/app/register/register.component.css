@@ -1,0 +1,22 @@
+form{
+    justify-content: space-evenly;
+    margin: 5px;
+    background-color: rgba(128, 128, 128, 0.568);
+    padding: 2px;
+    width:max-content;
+}
+
+#register{
+    width:max-content;
+}
+.row{
+    width:max-content;
+   
+}
+
+input{
+    width: 200px;
+    padding-left:10px;
+    margin-left:20px;
+}
+
