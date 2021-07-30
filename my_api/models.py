@@ -4,7 +4,7 @@ from django.contrib.auth.models import AbstractUser
 class non_users(models.Model):
     firstname = models.CharField(max_length=64, null=False)
     lastname = models.CharField(max_length=64, null=False)
-    email = models.CharField(max_length=64, null=False)
+    email = models.CharField(max_length=64, unique=True, null=False)
     REQUIRED_FIELDS = [ 'firstname', 'lastname', 'email']
     def __str__(self):
         return self.email
@@ -47,7 +47,7 @@ class Single_ticket(models.Model):
     ticket_types_id = models.ForeignKey(Ticket_types, on_delete=models.CASCADE, null=False)
     ticket_date = models.DateTimeField(auto_now_add=True, null=False, editable=False)
     validfrom = models.DateTimeField(auto_now_add=False, null=False, editable=True) #starts expiring
-    amount = models.PositiveIntegerField(null=False, default='1')
+    amount = models.PositiveIntegerField( null=False, editable = True, default='1' )
     def __str__(self):
         return str(self.id)
 
@@ -66,6 +66,8 @@ class Destinations(models.Model):
     dest_name = models.CharField(max_length=64, null=False, unique=True)
     dfrom = models.CharField(max_length=64, null=True)
     dto = models.CharField(max_length=64, null=True)
+    line_no = models.PositiveIntegerField(null=False, default='1', editable=True, unique= True)
+    active = models.BooleanField( default=True, editable=True )
     def get_by_natural_key(self, dest_name):
         return self.get(dest_name=dest_name)
     def __str__(self):

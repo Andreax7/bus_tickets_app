@@ -1,36 +1,36 @@
 from . import views
 from django.urls import path, include
 from rest_framework import routers
-from rest_framework_jwt.views import obtain_jwt_token, refresh_jwt_token
+from rest_framework_jwt.views import obtain_jwt_token, refresh_jwt_token, verify_jwt_token
+
 
 router = routers.DefaultRouter(trailing_slash=False)
 
 urlpatterns = [
+    #Registered Users
     path('myprofile/', views.ProfileView, name='profile'),
-    path('login/', views.LoginView, name='login'),
     path('auth/', obtain_jwt_token),
-    path('token-refresh/', refresh_jwt_token),
+    path('refresh/', refresh_jwt_token),
+    path('verify/', verify_jwt_token),
  #   path('rest-auth/', include('rest_framework.urls')),
   
-    
-    path('register/', views.RegisterAPI.as_view(), name='register'),
-    path('checkuser/<str:username>',views.CheckusernameAPI),
-    path('checkmail/<str:email>',views.CheckemailAPI),
+     # everyone 
+    path('destinations/', views.AllDestinations, name='destinations'),
+    path('destinations/<int:pk>', views.DestZone, name='destinations_by_zone'), # filter destinations by zone
+    path('timetable/<int:did>', views.Show_Timetable), # gets the timetable of chosen destination
+   
+    path('register/', views.RegisterAPI.as_view(), name='register'), 
+    path('checkuser/<str:username>',views.CheckusernameAPI), # does username exists -for login/register
+    path('checkmail/<str:email>',views.CheckemailAPI), #does email exists - register check
+    path('nonusers/', views.nonUser), #for ticket creating
+    path('buy_ticket/', views.Buy_Ticket),
+    path('ttype/', views.tickettyp), # gets all ticket types or admin creats new ticket type
 
     #Admin
-    path('destinations/', views.AllDestinations, name='destinations'),
-    path('deupdate/<int:pk>', views.Destination_Update),
-    #path('elogin/', views.loginAdm),
-    #path('elogout/', views.logoutAdm),
-    
-    # everyone
-    path('destinations/<int:pk>', views.DestZone, name='destinations_by_zone'),
-    path('timetable/<int:did>', views.Show_Timetable),
-    path('buy_ticket/<int:tid>', views.Buy_Ticket),
-
-    # #Registered Users
-    #path('login/', views.loginPg),
-    #path('logout/', views.logoutPg),
-
+    path('dests/',views.CreateDestination),
+    path('dests/<int:pk>', views.Destination_Update),
+    path('moderator/', views.AdminProfileView, name='moderator'),
+    path('isstaff/', views.Isadmin),
+        
     
 ]

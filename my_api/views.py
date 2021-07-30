@@ -23,41 +23,7 @@ from django.shortcuts import render
 #*****************************************************************
 
 # ------POST METHODS----------
-#Login
-@api_view(['POST'])
-@permission_classes([AllowAny])
-@csrf_exempt
-def LoginView(request):
-    username = request.data.get('username')
-    password = request.data.get('password')
-    userf = Profiles.objects.get(username=username)
-    if (username is None) or (password is None):
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-    if(not userf.check_password(password)):
-        user = authenticate(username=username, password=password)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-    user = authenticate(username=username, password=password)
-
-    token = Token.objects.get(user=userf.id)
-    json={}
-    json['username']= request.data["username"]
-    json['token'] = token.key
-    return Response(json)
-
-
-@csrf_protect
-class ProfileView(APIView):
-    authentication_classes = [TokenAuthentication,]
-    permission_classes = [IsAuthenticated,]
-    def get(self, request, format='json'):
-        content = {
-            'user': str(request.user),
-            'auth': none,
-        }
-        return Response(content)
-
 #Registration
-
 class RegisterAPI(generics.CreateAPIView):
     permission_classes = [AllowAny]
     queryset = Profiles.objects.all()
@@ -74,7 +40,59 @@ class RegisterAPI(generics.CreateAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-#---------------------Check if user allready exists api endpoint
+#--------------------------------------------------------------
+#-----------------CREATE AND GET BUS TICKETS-------------------
+@api_view(['GET', 'POST']) # Check if user allready had ticket to prevent duplicates
+@permission_classes([AllowAny])
+@csrf_exempt
+def nonUser(request):
+    if request.method == 'GET' and (request.user).is_staff == True: #admin can see all users that used tickets
+        #nuser = non_users.objects.filter()
+        data = non_users.objects.all()
+        serializer = nonusrSerializer(data, many=True)
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        serializer = nonusrSerializer(data=request.data)
+        email=request.data['email']
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        elif non_users.objects.get(email=email) != None:
+            queryset = non_users.objects.get(email=email)
+            serializer = nonusrSerializer(queryset)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return Response(status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+@csrf_exempt
+def tickettyp(request):
+    if request.method == 'POST' and (request.user).is_staff == True:
+        serializer = TicketTypeSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    if request.method == 'GET':
+        queryset = Ticket_types.objects.all()
+        serializer = TicketTypeSerializer(queryset, many=True)
+        return Response(serializer.data)
+    return Response(status=status.HTTP_400_BAD_REQUEST)
+
+#Non_user ticket buying
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def Buy_Ticket(request):
+    if request.method == 'POST':
+        serializer = TicketSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#---------------------Check if user allready exists api endpoint (used for verification)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def CheckusernameAPI(request,username):
@@ -100,64 +118,22 @@ def CheckemailAPI(request,email):
     if usr == str(email):
         return Response('true')
     return Response('false')
-#-------------------------------------------------------
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def ProfileView(request, format=None):
-    content = {
-        'user': str(request.user),  # `django.contrib.auth.User` instance.
-    }
-    return Response(content)
-
-class JSONWebTokenAPIView(APIView):
-    permission_classes = ()
-    authentication_classes = ()
-    def get_serializer_context(self):
-        return {
-            'request': self.request,
-            'view': self,
-        }
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.object.get('user') or request.user
-            token = serializer.object.get('token')
-            response_data = jwt_response_payload_handler(token, user, request)
-            response = Response(response_data)
-            if api_settings.JWT_AUTH_COOKIE:
-                expiration = (datetime.utcnow() +
-                              api_settings.JWT_EXPIRATION_DELTA)
-                response.set_cookie(api_settings.JWT_AUTH_COOKIE,
-                                    token,
-                                    expires=expiration,
-                                    httponly=True)
-            return Response
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#------------------------------------------------
 
 #--------GET METHODS ----------
 
-@api_view(['GET', 'POST'])
+@api_view(['GET'])
 @permission_classes([AllowAny])
 def AllDestinations(request):
-    user = request.user
     if request.method == 'GET':
-        dests = Destinations.objects.all()
+        dests = Destinations.objects.filter(active=True)
         serializer = DestDetailSerializer(dests, many=True)
         return Response(serializer.data)
-    elif request.method == 'POST' and user.is_staff == True:
-        serializer = DestDetailSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])       
-def DestZone(request,pk):
-    dest_by_zone = Destinations.objects.filter(zone_id=pk)
+def DestZone(request,pk): # Gets all destinations in chosen zone from db 
+    dest_by_zone = Destinations.objects.filter(zone_id=pk, active=True)
     if request.method == 'GET':
         serializer = DestDetailSerializer(dest_by_zone, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -167,57 +143,104 @@ def DestZone(request,pk):
 @permission_classes([AllowAny])
 def Show_Timetable(request,did):
     timetable = Timetable.objects.filter(dest_name_id=did)
-    dest = Destinations.objects.get(id=did)
-    departures = Departures.objects.all()
+    departures = Departures.objects.all().order_by('departure')
     filtered_timetable=[]
     if request.method == 'GET':
-        for t in timetable:
-            time=Departures.objects.filter(id=t.departure.id)
+        for d in departures:
+            time=timetable.filter(departure_id=d.id)
             for dep in time:
-                filtered_timetable.append({dep.deptype:dep.departure})
+                filtered_timetable.append({d.deptype:d.departure})
         return Response(filtered_timetable, status=status.HTTP_200_OK)   
 
-#Non_user ticket buying
-@api_view(['POST'])
-def Buy_Ticket(request):
-    user = request.user
-    if request.method == 'POST':
-        serializer = TicketSerializer(ticket, many=True)
-        ticket = Ticket_types.objects.filter(ticket_types_id=tid)
-        return Response(serializer.data)
-    return Response(status=status.HTTP_400_BAD_REQUEST)
 
 #**************************************************************************************
 #*******************************ADMIN PANEL********************************************
 #**************************************************************************************
 
-@permission_classes([IsAdminUser, IsAuthenticated])
-@api_view(['POST'])
-def AddDest(request):
-    dest = Destinations.objects.get(id=pk)
-    serializer = DestDetailSerializer(dest)
+@api_view(['GET','POST'])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def AdminProfileView(request, format=None):
+    user = str(request.user)
+    data = Profiles.objects.filter(is_staff=True)
+    serializer = AdminSeralizer(data, many=True)
     return Response(serializer.data)
 
+@api_view(['GET', 'POST'])
+@permission_classes([IsAdminUser])
+def CreateDestination(request):
+    user = request.user
+    if request.method == 'GET':
+        dests = Destinations.objects.all()
+        serializer = DestDetailSerializer(dests, many=True)
+        return Response(serializer.data)
+    if request.method == 'POST':
+        serializer = DestDetailSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return Response(status=status.HTTP_400_BAD_REQUEST)
 
 @permission_classes([IsAdminUser])
 @api_view(['GET', 'PUT', 'DELETE'])
-def Destination_Update(request,pk):
-    user = request.user
-    if request.method == 'GET' and user.is_staff == True:
+def Destination_Update(request,pk):  #admin api endpoint for update and delete choosen destination
+    try: 
+        dest = Destinations.objects.get(id=pk)
+    except dest.DoesNotExist: 
+        return JsonResponse({'message': 'Destination does not exist'}, status=status.HTTP_404_NOT_FOUND) 
+    if request.method == 'GET':
         dest = Destinations.objects.get(id=pk)
         serializer = DestDetailSerializer(dest)
         return Response(serializer.data)
-    elif request.method == 'PUT' and user.is_staff == True:
-        serializer = DestinationSerializer(dests, data=request.data)
+    if request.method == 'PUT':
+        serializer = DestDetailSerializer(dest, data=request.data, partial=True)
         if serializer.is_valid():                       
             serializer.save() 
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    elif request.method == 'DELETE' and user.is_staff == True:
-        dests.delete()
+    if request.method == 'DELETE':
+        dest.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+@permission_classes([IsAdminUser, IsAuthenticated])
+@api_view(['PUT','DELETE'])
+def EditDest(request, id):
+    dest = Destinations.objects.get(id=pk)
+    serializer = DestDetailSerializer(dest)
+    return Response(serializer.data)
+
+@permission_classes([IsAdminUser, IsAuthenticated])
+@api_view(['PUT','DELETE'])
+def EditDep(request, id):
+    dest = Departures.objects.get(id=pk)
+    serializer = DestDetailSerializer(dest)
+    return Response(serializer.data)
+
+@permission_classes([IsAdminUser, IsAuthenticated])
+@api_view(['GET','POST'])
+def AddDeparture(request): #Adds and gets all departures
+    departures = Departures.objects.all().order_by('departure')
+    serializer = DeparturesSerializer(dest)
+    return Response(serializer.data)
+
+@permission_classes([IsAdminUser, IsAuthenticated])
+@api_view(['GET'])
+def Isadmin(request): #this function is querying db if user is staff or not
+    user = request.user
+    if user.is_staff:
+        return Response({'true'})
+    return Response({'false'})
+
 
 #*****************************************************************
 #****************************USER PANEL***************************
 #*****************************************************************
+
+@api_view(['GET','POST'])
+@permission_classes([IsAuthenticated])
+def ProfileView(request, format=None):
+    user =str(request.user)
+    data=Profiles.objects.filter(email=request.user)
+    serializer=UserProfileSerializer(data, many=True)
+    return Response(serializer.data)
