@@ -31,6 +31,8 @@ urlpatterns = [
     path('dests/<int:pk>', views.Destination_Update),
     path('moderator/', views.AdminProfileView, name='moderator'),
     path('isstaff/', views.Isadmin),
-        
+    path('addept/', views.AddDeparture),
+    path('deldep/<int:pk>', views.DeleteDeparture),
+    path('newtimetable/', views.CreateTimetable),
     
 ]

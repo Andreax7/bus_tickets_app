@@ -121,25 +121,16 @@ def CheckemailAPI(request,email):
 #------------------------------------------------
 
 #--------GET METHODS ----------
-
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def AllDestinations(request):
     if request.method == 'GET':
-        dests = Destinations.objects.filter(active=True)
+        dests = Destinations.objects.filter(active=True).order_by("line_no")
         serializer = DestDetailSerializer(dests, many=True)
         return Response(serializer.data)
 
-@api_view(['GET'])
-@permission_classes([AllowAny])       
-def DestZone(request,pk): # Gets all destinations in chosen zone from db 
-    dest_by_zone = Destinations.objects.filter(zone_id=pk, active=True)
-    if request.method == 'GET':
-        serializer = DestDetailSerializer(dest_by_zone, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET']) 
+@api_view(['GET', 'DELETE']) 
 @permission_classes([AllowAny])
 def Show_Timetable(request,did):
     timetable = Timetable.objects.filter(dest_name_id=did)
@@ -150,7 +141,26 @@ def Show_Timetable(request,did):
             time=timetable.filter(departure_id=d.id)
             for dep in time:
                 filtered_timetable.append({d.deptype:d.departure})
-        return Response(filtered_timetable, status=status.HTTP_200_OK)   
+        return Response(filtered_timetable, status=status.HTTP_200_OK)
+    if request.method == "DELETE" and (request.user).is_staff == True:
+        timetable.delete()
+        time = Timetable.objects.get(id=did)
+        return Response(status = status.HTTP_204_NO_CONTENT)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])       
+def DestZone(request,pk): # Gets all destinations in chosen zone from db 
+    dest_by_zone = Destinations.objects.filter(zone_id=pk, active=True)
+    if request.method == 'GET':
+        serializer = DestDetailSerializer(dest_by_zone, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+ 
 
 
 #**************************************************************************************
@@ -170,7 +180,7 @@ def AdminProfileView(request, format=None):
 def CreateDestination(request):
     user = request.user
     if request.method == 'GET':
-        dests = Destinations.objects.all()
+        dests = Destinations.objects.all().order_by('line_no')
         serializer = DestDetailSerializer(dests, many=True)
         return Response(serializer.data)
     if request.method == 'POST':
@@ -203,25 +213,30 @@ def Destination_Update(request,pk):  #admin api endpoint for update and delete c
         return Response(status=status.HTTP_204_NO_CONTENT)
     return Response(status=status.HTTP_401_UNAUTHORIZED)
 
-@permission_classes([IsAdminUser, IsAuthenticated])
-@api_view(['PUT','DELETE'])
-def EditDest(request, id):
-    dest = Destinations.objects.get(id=pk)
-    serializer = DestDetailSerializer(dest)
-    return Response(serializer.data)
-
-@permission_classes([IsAdminUser, IsAuthenticated])
-@api_view(['PUT','DELETE'])
-def EditDep(request, id):
-    dest = Departures.objects.get(id=pk)
-    serializer = DestDetailSerializer(dest)
-    return Response(serializer.data)
 
 @permission_classes([IsAdminUser, IsAuthenticated])
 @api_view(['GET','POST'])
 def AddDeparture(request): #Adds and gets all departures
     departures = Departures.objects.all().order_by('departure')
-    serializer = DeparturesSerializer(dest)
+    if request.method == 'GET':
+        serializer = DeparturesSerializer(departures, many=True)
+        return Response(serializer.data)
+    if request.method == 'POST':
+        serializer = DeparturesSerializer(data=request.data, context={"request": request}) 
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+    return Response(serializer.data)
+
+@permission_classes([IsAdminUser, IsAuthenticated])
+@api_view(['DELETE'])
+def DeleteDeparture(request,pk): #Adds and gets all departures
+    departures = Departures.objects.get(id=pk)
+    serializer = DeparturesSerializer(departures)
+    if departures:
+        departures.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
     return Response(serializer.data)
 
 @permission_classes([IsAdminUser, IsAuthenticated])
@@ -231,6 +246,21 @@ def Isadmin(request): #this function is querying db if user is staff or not
     if user.is_staff:
         return Response({'true'})
     return Response({'false'})
+
+@permission_classes([IsAdminUser, IsAuthenticated])
+@api_view(['POST', 'DELETE'])
+def CreateTimetable(request):
+    serializer = TimetableSerializer(data=request.data, context={"request": request}) 
+    if request.method == 'POST':
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+    if request.method == 'DELETE':
+        data = request.data['dest_name'].value
+        dest = Timetable.objects.filter(dest_name_id=data)
+        dest.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
 
 #*****************************************************************

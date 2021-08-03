@@ -69,25 +69,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = ['id','username','first_name','last_name', 'email', 'address','picture','role']
     def validate(self, validated_data):
             return Profiles(**validated_data)
-    
-class DestDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Destinations
-        fields = '__all__'
-    def create(self, validated_data):
-        dest = Destinations.objects.create(**validated_data) # creates hashed password
-        dest.save() 
-        return dest
 
-# Timetable data
-class TimetableSerializer(serializers.ModelSerializer):
-    departure = serializers.CharField(source='departure.departure')
-    deptype = serializers.CharField(source='departure.deptype')
+class ProfileCheckSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Timetable
-        fields = ['dest_name','departure', 'deptype']
-    def natural_key(self):
-        return (self.dest_name)
+        model = Profiles
+        fields = ['id', 'email']
+    def validate(self, validated_data):
+            return Profiles(**validated_data)
+
+    
 
 #************************************************
 # #**************Non user ticket CREATE**********
@@ -129,9 +119,31 @@ class AdminSeralizer(serializers.ModelSerializer):
 
 class DeparturesSerializer(serializers.ModelSerializer):
     class Meta:
-        models = Departures
-   
+        model = Departures
+        fields = "__all__"
 
+# Timetable data
+class TimetableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Timetable
+        fields = '__all__'
+    def natural_key(self):
+         return str(dest_name)
+    def create(self, validated_data):
+        time = Timetable.objects.create(**validated_data) # creates hashed password
+        time.save() 
+        return time
+
+
+class DestDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Destinations
+        fields = '__all__'
+    def create(self, validated_data):
+        dest = Destinations.objects.create(**validated_data)
+        dest.save() 
+        return dest
+        
 class TicketTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket_types
