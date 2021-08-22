@@ -29,10 +29,20 @@ urlpatterns = [
     #Admin
     path('dests/',views.CreateDestination),
     path('dests/<int:pk>', views.Destination_Update),
-    path('moderator/', views.AdminProfileView, name='moderator'),
     path('isstaff/', views.Isadmin),
     path('addept/', views.AddDeparture),
     path('deldep/<int:pk>', views.DeleteDeparture),
-    path('newtimetable/', views.CreateTimetable),
-    
+    path('newtimetable/', views.CreateTimetable), #Post
+    path('deltimetable/<int:dnid>/<int:did>', views.DeleteTimetable),
+    path('showtimetable/<int:did>', views.ShowTimetable),
+    path('ticketactive/<int:pk>',views.TicketDeactivate),
+    path('nuticket/<int:nuid>', views.nUserTicket),
+    path('soldtickets/<int:tid>', views.soldTickets),
+    path('allprofiles/', views.AllProfiles),
+    path('setemploy/<int:eid>', views.SetEmployee),
+    path('getusersub/<int:uid>', views.GetUserSubsciption),
+    path('editsub/<int:sid>', views.EditSubscription),
+    path('allsubs/', views.SubTypes),
+    path('editsubtype/<int:pk>', views.EditSubType),
+    path('soldsubs/<int:id>',views.soldSubscriptions), #GET
 ]

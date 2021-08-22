@@ -16,6 +16,7 @@ from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .permissions import IsAdminUser
 from django.shortcuts import render
+from django.db.models import Count
 
  
 #*****************************************************************
@@ -46,8 +47,7 @@ class RegisterAPI(generics.CreateAPIView):
 @permission_classes([AllowAny])
 @csrf_exempt
 def nonUser(request):
-    if request.method == 'GET' and (request.user).is_staff == True: #admin can see all users that used tickets
-        #nuser = non_users.objects.filter()
+    if request.method == 'GET' and (request.user).is_staff == True: #admin can see all nonusers that used tickets
         data = non_users.objects.all()
         serializer = nonusrSerializer(data, many=True)
         return Response(serializer.data)
@@ -69,7 +69,7 @@ def nonUser(request):
 @csrf_exempt
 def tickettyp(request):
     if request.method == 'POST' and (request.user).is_staff == True:
-        serializer = TicketTypeSerializer(data=request.data)
+        serializer = TicketTypeSerializer(data=request.data, many=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -82,15 +82,19 @@ def tickettyp(request):
 
 #Non_user ticket buying
 
-@api_view(['POST'])
+@api_view(['POST', 'GET'])
 @permission_classes([AllowAny])
 def Buy_Ticket(request):
+    if request.method == 'GET' and (request.user).is_staff == True:
+        queryset = Single_ticket.objects.exclude(non_users_id__isnull = True)
+        serializer = TicketSerializer(queryset, many= True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     if request.method == 'POST':
-        serializer = TicketSerializer(data=request.data)
+        serializer = TicketSerializer(data = request.data, context={"request": request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return Response(serializer.errors)
 
 #---------------------Check if user allready exists api endpoint (used for verification)
 @api_view(['GET'])
@@ -130,7 +134,7 @@ def AllDestinations(request):
         return Response(serializer.data)
 
 
-@api_view(['GET', 'DELETE']) 
+@api_view(['GET']) 
 @permission_classes([AllowAny])
 def Show_Timetable(request,did):
     timetable = Timetable.objects.filter(dest_name_id=did)
@@ -142,10 +146,6 @@ def Show_Timetable(request,did):
             for dep in time:
                 filtered_timetable.append({d.deptype:d.departure})
         return Response(filtered_timetable, status=status.HTTP_200_OK)
-    if request.method == "DELETE" and (request.user).is_staff == True:
-        timetable.delete()
-        time = Timetable.objects.get(id=did)
-        return Response(status = status.HTTP_204_NO_CONTENT)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -167,13 +167,82 @@ def DestZone(request,pk): # Gets all destinations in chosen zone from db
 #*******************************ADMIN PANEL********************************************
 #**************************************************************************************
 
+
+@permission_classes([IsAdminUser, IsAuthenticated])
+@api_view(['PUT'])
+def SetEmployee(request, eid): #admin api endpoint for declaring user with profile as admin/employee or not
+    try: 
+        Profile = Profiles.objects.get(id=eid)
+    except Profile.DoesNotExist: 
+        return Response({'message': 'User with this profile does not exist'}, status=status.HTTP_404_NOT_FOUND) 
+    if request.method == 'PUT':
+        serializer = SetEmployeeSerializer(Profile, data=request.data)
+        if serializer.is_valid():
+            serializer.save() 
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+@permission_classes([IsAdminUser, IsAuthenticated])
+@api_view(['GET'])
+def GetUserSubsciption(request, uid): #admin api endpoint for declaring user with profile as admin/employee or not
+    if request.method == 'GET':
+        subs = Subscriptions.objects.filter(Profiles_id_id=uid)
+        serializer = SubscriptionSerializer(subs,  many=True)
+        return Response(serializer.data)
+    return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+@permission_classes([IsAdminUser, IsAuthenticated])
+@api_view(['PUT','GET'])
+def EditSubscription(request,sid):
+    if request.method == 'GET':
+        subs = Subscriptions.objects.filter(id=sid)
+        serializer = SubscriptionSerializer(subs,  many=True)
+        return Response(serializer.data)
+    if request.method == 'PUT':
+        subs = Subscriptions.objects.get(id=sid)
+        serializer = SubscriptionSerializer(subs, data=request.data, context={"request": request})
+        if serializer.is_valid():
+            serializer.save() 
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
+@permission_classes([IsAdminUser, IsAuthenticated])
 @api_view(['GET','POST'])
-@permission_classes([IsAuthenticated, IsAdminUser])
-def AdminProfileView(request, format=None):
-    user = str(request.user)
-    data = Profiles.objects.filter(is_staff=True)
-    serializer = AdminSeralizer(data, many=True)
-    return Response(serializer.data)
+def SubTypes(request):
+        if request.method == 'GET':
+            subs = Subscription_types.objects.all()
+            serializer = SubTypeSerializer(subs,  many=True)
+            return Response(serializer.data)
+        if request.method == 'POST':
+            serializer = SubTypeSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@permission_classes([IsAdminUser, IsAuthenticated])
+@api_view(['PUT'])
+def EditSubType(request, pk):
+    if request.method == 'PUT':
+        subs = Subscription_types.objects.get(id=pk)
+        serializer = SubTypeSerializer(subs, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save() 
+            return Response(serializer.data)
+        return Response(serializer.errors)
+    
+    
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def AllProfiles(request):
+    if request.method == 'GET':
+        profiles = Profiles.objects.all()
+        serializer = AdminSerializer(profiles, many=True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAdminUser])
@@ -192,12 +261,12 @@ def CreateDestination(request):
     return Response(status=status.HTTP_400_BAD_REQUEST)
 
 @permission_classes([IsAdminUser])
-@api_view(['GET', 'PUT', 'DELETE'])
-def Destination_Update(request,pk):  #admin api endpoint for update and delete choosen destination
+@api_view(['GET', 'PUT'])
+def Destination_Update(request,pk):  #admin api endpoint for update choosen destination
     try: 
         dest = Destinations.objects.get(id=pk)
     except dest.DoesNotExist: 
-        return JsonResponse({'message': 'Destination does not exist'}, status=status.HTTP_404_NOT_FOUND) 
+        return Response({'message': 'Destination does not exist'}, status=status.HTTP_404_NOT_FOUND) 
     if request.method == 'GET':
         dest = Destinations.objects.get(id=pk)
         serializer = DestDetailSerializer(dest)
@@ -208,9 +277,9 @@ def Destination_Update(request,pk):  #admin api endpoint for update and delete c
             serializer.save() 
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    if request.method == 'DELETE':
-        dest.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+   # if request.method == 'DELETE':
+   #     dest.delete()
+   #    return Response(status=status.HTTP_204_NO_CONTENT)
     return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 
@@ -231,7 +300,7 @@ def AddDeparture(request): #Adds and gets all departures
 
 @permission_classes([IsAdminUser, IsAuthenticated])
 @api_view(['DELETE'])
-def DeleteDeparture(request,pk): #Adds and gets all departures
+def DeleteDeparture(request,pk): # delete chosen departure
     departures = Departures.objects.get(id=pk)
     serializer = DeparturesSerializer(departures)
     if departures:
@@ -239,7 +308,7 @@ def DeleteDeparture(request,pk): #Adds and gets all departures
         return Response(status=status.HTTP_204_NO_CONTENT)
     return Response(serializer.data)
 
-@permission_classes([IsAdminUser, IsAuthenticated])
+@permission_classes([AllowAny])
 @api_view(['GET'])
 def Isadmin(request): #this function is querying db if user is staff or not
     user = request.user
@@ -248,29 +317,90 @@ def Isadmin(request): #this function is querying db if user is staff or not
     return Response({'false'})
 
 @permission_classes([IsAdminUser, IsAuthenticated])
-@api_view(['POST', 'DELETE'])
+@api_view(['POST'])
 def CreateTimetable(request):
-    serializer = TimetableSerializer(data=request.data, context={"request": request}) 
-    if request.method == 'POST':
+     if request.method == 'POST':
+        serializer = TimetableSerializer(data=request.data, context={"request": request}) 
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-    if request.method == 'DELETE':
-        data = request.data['dest_name'].value
-        dest = Timetable.objects.filter(dest_name_id=data)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+@permission_classes([IsAdminUser, IsAuthenticated])
+@api_view(['POST', 'DELETE'])        
+def DeleteTimetable(request,dnid,did):
+    dest = Timetable.objects.filter(dest_name_id = dnid, departure_id=did)
+    if dest:
         dest.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-    return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+    return Response(status=status.HTTP_400_BAD_REQUEST)
 
+@permission_classes([IsAdminUser, IsAuthenticated])
+@api_view(['GET'])
+def ShowTimetable(request,did):
+    timetable = Timetable.objects.filter(dest_name_id=did)
+    serialize = TimetableSerializer(timetable, many=True)
+    return Response(serialize.data, status=status.HTTP_200_OK)
 
+@permission_classes([IsAdminUser, IsAuthenticated])
+@api_view(['PUT'])
+def TicketDeactivate(request,pk):  #admin api endpoint for ticket type activation/deactivation
+    try: 
+        ticket = Ticket_types.objects.get(id=pk)
+    except ticket.DoesNotExist: 
+        return Response({'message': 'Ticket type does not exist'}, status=status.HTTP_404_NOT_FOUND) 
+    if request.method == 'PUT':
+        serializer = TicketTypeSerializer(ticket, data=request.data, partial=True)
+        if serializer.is_valid():                       
+            serializer.save() 
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+@permission_classes([IsAdminUser, IsAuthenticated])
+@api_view(['GET'])
+def nUserTicket(request, nuid):
+    try: 
+        tickets = Single_ticket.objects.filter(non_users_id=nuid)
+    except ticket.DoesNotExist: 
+        return Response({'message': 'Ticket type does not exist'}, status=status.HTTP_404_NOT_FOUND) 
+    if request.method == 'GET':
+        serializer = TicketSerializer(tickets, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+# Number of sold tickets per ticket type
+@permission_classes([IsAdminUser, IsAuthenticated])
+@api_view(['GET'])
+def soldTickets(request, tid):     
+    if request.method == 'GET':
+        cnt = []
+        total = 0
+        tickets = Single_ticket.objects.filter(ticket_types_id=tid).values('amount').annotate(count=Count('amount'))
+        for t in tickets:
+            var = t["amount"] * t["count"]
+            total =+ var
+            cnt.append(total)       
+        return Response( sum(cnt), status=status.HTTP_200_OK)
+    return Response({'message': 'Ticket type does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+# Number of sold subscriptions per sub. type
+@permission_classes([IsAdminUser, IsAuthenticated])
+@api_view(['GET'])
+def soldSubscriptions(request, id):
+    if request.method == 'GET':
+        subs = Subscriptions.objects.filter(subscription_types_id=id).count()
+        return Response( subs, status=status.HTTP_200_OK)
+    return Response({'message': 'Subscription type does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+    
 #*****************************************************************
 #****************************USER PANEL***************************
 #*****************************************************************
 
-@api_view(['GET','POST'])
+@api_view(['GET','PUT'])
 @permission_classes([IsAuthenticated])
 def ProfileView(request, format=None):
-    user =str(request.user)
+    user=str(request.user)
     data=Profiles.objects.filter(email=request.user)
     serializer=UserProfileSerializer(data, many=True)
     return Response(serializer.data)

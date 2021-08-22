@@ -37,13 +37,14 @@ class Ticket_types(models.Model):
     tickettype = models.CharField(max_length=3, null=False, choices=ttype)
     ticket_price = models.DecimalField(max_digits=6, decimal_places=2, null=False)
     zone = models.ForeignKey(Zones, on_delete=models.CASCADE, null=False)
+    active = models.BooleanField( default=True, editable=True )
     REQUIRED_FIELDS = [ 'tickettype', 'ticket_price', 'zone']
     def __str__(self):
         return str(self.id)
 
 class Single_ticket(models.Model):
-    non_users_id = models.ForeignKey(non_users, on_delete=models.CASCADE, null=True, blank=True)
-    Profiles_id = models.ForeignKey(Profiles, on_delete=models.CASCADE, null=True, blank=True)
+    non_users_id = models.ForeignKey(non_users, on_delete=models.CASCADE, null=True)
+    Profiles_id = models.ForeignKey(Profiles, on_delete=models.CASCADE, null=True)
     ticket_types_id = models.ForeignKey(Ticket_types, on_delete=models.CASCADE, null=False)
     ticket_date = models.DateTimeField(auto_now_add=True, null=False, editable=False)
     validfrom = models.DateTimeField(auto_now_add=False, null=False, editable=True) #starts expiring
@@ -54,7 +55,7 @@ class Single_ticket(models.Model):
 class Departures(models.Model):
     dtype = [
         ('working_day', 'working_day'),
-        ('holidays ', 'holidays'),
+        ('holidays', 'holidays'),
     ] 
     deptype = models.CharField(max_length=11, null=False, choices=dtype)
     departure = models.TimeField(auto_now=False,auto_now_add=False, null=True, editable=True) #departure time for holidays
@@ -100,6 +101,6 @@ class Subscriptions(models.Model):
     Profiles_id = models.ForeignKey(Profiles, on_delete=models.CASCADE, null=False)
     subscription_types_id = models.ForeignKey(Subscription_types, on_delete=models.CASCADE, null=False)
     date_ordered = models.DateTimeField(auto_now_add=True, null=False)
-    discount = models.DecimalField(max_digits=6, decimal_places=2, null=False)
+    discount = models.DecimalField(max_digits=6, decimal_places=2)
     def __str__(self):
         return str(self.id)

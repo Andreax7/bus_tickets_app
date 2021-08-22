@@ -97,11 +97,10 @@ class nonusrSerializer(serializers.ModelSerializer):
             return user
 
 class TicketSerializer(serializers.ModelSerializer):
+    ticket_date = serializers.EmailField(read_only=True)
     class Meta:
-        ticket_date = models.DateTimeField(auto_now_add=True)
         model = Single_ticket
-        fields = "__all__"
-   
+        fields = ["non_users_id","ticket_types_id","amount","validfrom","ticket_date"]
 
 
 
@@ -109,30 +108,54 @@ class TicketSerializer(serializers.ModelSerializer):
 #*******************************ADMIN PANEL********************************************
 #**************************************************************************************
 
-class AdminSeralizer(serializers.ModelSerializer):
-    is_staff = serializers.CharField
+class AdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profiles
-        fields = ['id','username', 'is_active', 'is_staff', 'last_login' ]
+        fields = '__all__'
     def validate(self,validated_data):
         return Profiles(**validated_data)
+    def create(self, validated_data):
+        profile = Profiles.objects.create(**validated_data)
+        profile.save()
+        return profile
+
+class SetEmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profiles
+        fields = ['id','is_staff','is_active']
+    def create(self, validated_data):
+        profile = Profiles.objects.create(**validated_data)
+        profile.save()
+        return profile
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscriptions
+        fields = '__all__'
+    def create(self, validated_data):
+        subs = Subscriptions.objects.create(**validated_data)
+        subs.save() 
+        return subs
+
+class SubTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription_types
+        fields = '__all__'
 
 class DeparturesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Departures
-        fields = "__all__"
+        fields = '__all__'
 
 # Timetable data
 class TimetableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Timetable
         fields = '__all__'
-    def natural_key(self):
-         return str(dest_name)
     def create(self, validated_data):
-        time = Timetable.objects.create(**validated_data) # creates hashed password
-        time.save() 
-        return time
+        dest = Timetable.objects.create(**validated_data)
+        dest.save() 
+        return dest
 
 
 class DestDetailSerializer(serializers.ModelSerializer):
@@ -149,17 +172,7 @@ class TicketTypeSerializer(serializers.ModelSerializer):
         model = Ticket_types
         fields = '__all__'
     def create(self, validated_data):
-        ticket = Ticket_types.objects.create(
-                tickettype = validated_data['tickettype'],
-                ticket_price = validated_data['ticket_price'], 
-                zone = validated_data['zone'])
+        ticket = Ticket_types.objects.create(**validated_data)
         ticket.save()
         return ticket
-    def update(self, instance, validated_data):
-        instance.tickettype = validated_data.get('tickettype', instance.tickettype)
-        instance.ticketprice = validated_data.get('ticketprice', instance.ticketprice)
-        instance.zone_id = validated_data.get('zone', instance.zone)
-        return instance
-
-        def validate(self, validated_data):
-            return Ticket_types(**validated_data)
+    
