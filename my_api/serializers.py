@@ -63,12 +63,17 @@ class emailSerializer(serializers.ModelSerializer):
 #***************USER PANEL****************************
 #*****************************************************
 class UserProfileSerializer(serializers.ModelSerializer):
-    username = serializers.CharField()
     class Meta:
         model = Profiles
         fields = ['id','username','first_name','last_name', 'email', 'address','picture','role']
     def validate(self, validated_data):
             return Profiles(**validated_data)
+
+class EditProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profiles
+        fields = ['username','first_name','last_name', 'email', 'address','picture','role']
+
 
 class ProfileCheckSerializer(serializers.ModelSerializer):
     class Meta:
@@ -97,10 +102,10 @@ class nonusrSerializer(serializers.ModelSerializer):
             return user
 
 class TicketSerializer(serializers.ModelSerializer):
-    ticket_date = serializers.EmailField(read_only=True)
+    ticket_date = serializers.DateTimeField(read_only=True)
     class Meta:
         model = Single_ticket
-        fields = ["non_users_id","ticket_types_id","amount","validfrom","ticket_date"]
+        fields = ["id","non_users_id","Profiles_id","ticket_types_id","amount","validfrom","ticket_date"]
 
 
 

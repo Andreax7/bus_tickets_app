@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = ' '
+SECRET_KEY = '2yq!w(r!p1q*6%yfp!+w8zy%=v-maqmhe_0ov#yt!#oclavu)x'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -60,7 +60,7 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAdminUser', 
     ],
 }
-#JWT package generates token every day
+#JWT package generates token every hour
 JWT_AUTH = {
     'JWT_AUTH_HEADER_PREFIX': 'JWT',
 

@@ -101,6 +101,6 @@ class Subscriptions(models.Model):
     Profiles_id = models.ForeignKey(Profiles, on_delete=models.CASCADE, null=False)
     subscription_types_id = models.ForeignKey(Subscription_types, on_delete=models.CASCADE, null=False)
     date_ordered = models.DateTimeField(auto_now_add=True, null=False)
-    discount = models.DecimalField(max_digits=6, decimal_places=2)
+    discount = models.DecimalField(max_digits=6, decimal_places=2,default=0 )
     def __str__(self):
         return str(self.id)

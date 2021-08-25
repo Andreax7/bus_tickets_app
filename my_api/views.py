@@ -94,7 +94,7 @@ def Buy_Ticket(request):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors)
+    return Response(status=status.HTTP_400_BAD_REQUEST)
 
 #---------------------Check if user allready exists api endpoint (used for verification)
 @api_view(['GET'])
@@ -308,13 +308,13 @@ def DeleteDeparture(request,pk): # delete chosen departure
         return Response(status=status.HTTP_204_NO_CONTENT)
     return Response(serializer.data)
 
-@permission_classes([AllowAny])
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def Isadmin(request): #this function is querying db if user is staff or not
     user = request.user
     if user.is_staff:
-        return Response({'true'})
-    return Response({'false'})
+        return Response('true')
+    return Response('false')
 
 @permission_classes([IsAdminUser, IsAuthenticated])
 @api_view(['POST'])
@@ -397,10 +397,75 @@ def soldSubscriptions(request, id):
 #****************************USER PANEL***************************
 #*****************************************************************
 
-@api_view(['GET','PUT'])
+@api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def ProfileView(request, format=None):
-    user=str(request.user)
-    data=Profiles.objects.filter(email=request.user)
-    serializer=UserProfileSerializer(data, many=True)
-    return Response(serializer.data)
+    if request.method == 'GET':
+        user=str(request.user)
+        data=Profiles.objects.filter(email=request.user)
+        serializer=UserProfileSerializer(data, many=True)
+        return Response(serializer.data)
+    return Response(status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def EditProfile(request,pk):
+    try: 
+        Profile = Profiles.objects.get(id=pk)
+    except Profile.DoesNotExist: 
+        return Response({'message': 'User with this profile does not exist'}, status=status.HTTP_404_NOT_FOUND) 
+    if request.method == 'PUT':
+        serializer = EditProfileSerializer(Profile, data=request.data)
+        if serializer.is_valid():
+            serializer.save() 
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
+@api_view(['GET']) # User gets info table with subscription types
+@permission_classes([IsAuthenticated])
+def UserSubTypes(request):
+        if request.method == 'GET':
+            subs = Subscription_types.objects.all().exclude(active=False)
+            serializer = SubTypeSerializer(subs,  many=True)
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def NewSubsciption(request):
+    if request.method == 'POST':
+        serializer = SubscriptionSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+    return Response(serializer.errors)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def MySubscriptions(request,id):
+    user = Subscriptions.objects.filter(Profiles_id=id)
+    ser = SubscriptionSerializer(user, many = True)
+    return Response(ser.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def MyTickets(request,id):
+    user = Single_ticket.objects.filter(Profiles_id=id)
+    ser = TicketSerializer(user, many = True)
+    return Response(ser.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def OneSubscription(request, sid):
+    sub = Subscriptions.objects.get(id=sid)
+    ser = SubscriptionSerializer(sub)
+    return Response(ser.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def OneTicket(request, tid):
+    ticket = Single_ticket.objects.get(id=tid)
+    ser = TicketSerializer(ticket)
+    return Response(ser.data)
